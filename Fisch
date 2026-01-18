@@ -1,0 +1,80 @@
+import pyautogui
+import time
+import cv2
+import numpy as np
+from PIL import ImageGrab
+
+# Paths to the template images (you need to capture these from your screen)
+FISH_ICON_PATH = 'fish_icon.png'   # Example: Image of the fish icon
+CAST_BUTTON_PATH = 'cast_button.png'  # Example: Image of the cast button
+
+# Set a threshold for image recognition (between 0 and 1, where 1 is 100% match)
+THRESHOLD = 0.8
+
+# Function to capture the screen
+def capture_screen():
+    return np.array(ImageGrab.grab())
+
+# Function to find a template image on the screen
+def find_image(template_path, screenshot):
+    # Convert screenshot to grayscale
+    gray_screenshot = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
+    template = cv2.imread(template_path, 0)
+    
+    # Match the template with the screenshot
+    result = cv2.matchTemplate(gray_screenshot, template, cv2.TM_CCOEFF_NORMED)
+    
+    # Get the locations where the match is above the threshold
+    loc = np.where(result >= THRESHOLD)
+    
+    # If we found a match, return the location
+    if len(loc[0]) > 0:
+        return loc
+    return None
+
+# Function to click at a specific location on the screen
+def click_location(loc, screenshot):
+    # Get the center of the found location
+    w, h = screenshot.shape[1], screenshot.shape[0]
+    x, y = loc[1][0], loc[0][0]  # Get the first match's coordinates
+    pyautogui.click(x, y)  # Simulate a mouse click at the found location
+
+# Function to cast the fishing line (simulating clicking the cast button)
+def cast_line():
+    # Capture the screen and look for the cast button
+    screenshot = capture_screen()
+    cast_button_loc = find_image(CAST_BUTTON_PATH, screenshot)
+    
+    if cast_button_loc:
+        print("Casting line...")
+        click_location(cast_button_loc, screenshot)
+        time.sleep(2)  # Wait for the cast animation to finish
+    else:
+        print("Could not find the cast button.")
+
+# Function to reel in the fish if it is detected
+def reel_in_fish():
+    # Capture the screen and look for the fish icon
+    screenshot = capture_screen()
+    fish_icon_loc = find_image(FISH_ICON_PATH, screenshot)
+    
+    if fish_icon_loc:
+        print("Fish caught! Reeling in...")
+        click_location(fish_icon_loc, screenshot)
+        time.sleep(2)  # Wait for the reeling-in animation
+    else:
+        print("No fish detected.")
+
+# Main bot loop
+def fishing_bot():
+    while True:
+        cast_line()  # Try to cast the line
+        time.sleep(3)  # Wait for the fish to bite (adjust based on the game)
+        
+        reel_in_fish()  # Check if the fish bit and reel it in
+        time.sleep(1)  # Pause before trying again
+
+# Start the bot
+if __name__ == '__main__':
+    print("Starting the fishing bot...")
+    fishing_bot()
